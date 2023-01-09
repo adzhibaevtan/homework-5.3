@@ -16,7 +16,7 @@ import retrofit2.Response
 class SearchFragment : Fragment(R.layout.fragment_search) {
     private val binding by viewBinding(FragmentSearchBinding::bind)
     var adapter = SearchAdapter(listOf())
-
+    var page = 1
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -26,30 +26,37 @@ class SearchFragment : Fragment(R.layout.fragment_search) {
     private fun initClicker() {
         with(binding) {
             searchBtn.setOnClickListener {
-                RetrofitService().api.searchImage(keyWord = searchEt.text.toString())
-                    .enqueue(object : Callback<PixaModel> {
-                        override fun onResponse(
-                            call: Call<PixaModel>,
-                            response: Response<PixaModel>
-                        ) {
-                            response.body()?.hits?.let {
-                                adapter = SearchAdapter(it)
-                                binding.recycler.adapter = this@SearchFragment.adapter
-                            }
-                            Log.e(
-                                "check",
-                                "onResponse: ${response.body()?.hits!![0].largeImageURL}",
-                            )
-                        }
+                page = 1
+                search()
+            }
 
-                        override fun onFailure(call: Call<PixaModel>, t: Throwable) {
-                            Log.e("check", "onFailure: ${t.message}")
-                        }
-                    })
-
+            updateBtn.setOnClickListener {
+                page++
+                search()
             }
         }
     }
 
+    private fun FragmentSearchBinding.search() {
+        RetrofitService().api.searchImage(keyWord = searchEt.text.toString(), page = page)
+            .enqueue(object : Callback<PixaModel> {
+                override fun onResponse(
+                    call: Call<PixaModel>,
+                    response: Response<PixaModel>
+                ) {
+                    response.body()?.hits?.let {
+                        adapter = SearchAdapter(it)
+                        binding.recycler.adapter = this@SearchFragment.adapter
+                    }
+                    Log.e(
+                        "check",
+                        "onResponse: ${response.body()?.hits!![0].largeImageURL}",
+                    )
+                }
 
+                override fun onFailure(call: Call<PixaModel>, t: Throwable) {
+                    Log.e("check", "onFailure: ${t.message}")
+                }
+            })
+    }
 }
